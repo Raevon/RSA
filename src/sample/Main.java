@@ -30,7 +30,7 @@ public class Main extends Application
      BigInteger encrypted;
     BigInteger EEEE;
     BigInteger randomNumberB;
-    BigInteger cipherMessage;
+    String cipherMessage;
 
     BigInteger p, q ;
 
@@ -75,6 +75,11 @@ public class Main extends Application
 
 
     }
+    public BigInteger getPhi(BigInteger p,BigInteger q){
+        r = p.subtract( BigInteger.valueOf( 1 ) ) ;
+        r = r.multiply( q.subtract( BigInteger.valueOf( 1 ) ) ) ;
+        return r;
+    }
 
     public BigInteger getp()
     {
@@ -105,14 +110,8 @@ public class Main extends Application
     {
         return( D ) ;
     }
-    public static BigInteger encrypt(BigInteger message, BigInteger e, BigInteger n) {
-        return message.modPow(e, n);
-    }
 
-    public static BigInteger decrypt(BigInteger message, BigInteger d, BigInteger n) {
-        return message.modPow(d, n);
-    }
-    public static BigInteger stringCipher(String message,BigInteger e,BigInteger n) {
+    public static String stringCipher(String message,BigInteger e,BigInteger n) {
         String cipherString = "";
         int i = 0;
         while (i < message.length()) {
@@ -123,38 +122,50 @@ public class Main extends Application
             //System.out.println(ch);
            // System.out.println(a+"Powered");
 
-            cipherString = cipherString + a;
+            cipherString = cipherString +a+",";
             i++;
         }
-        BigInteger cipherBig = new BigInteger(String.valueOf(cipherString));
-        System.out.println(cipherBig+ " ASCI powered");
+        String a = cipherString.substring(0, cipherString.lastIndexOf(","));
+        System.out.println(a+ " ASCI powered");
+        String cipherBig = (String.valueOf(a));
+
         return cipherBig;
     }
 static String asci="";
-    public static String cipherToString(BigInteger message,BigInteger d,BigInteger n) {
+    public static String cipherToString(String message,BigInteger d,BigInteger n) {
         String cipherString = message.toString();
         System.out.println(cipherString);
         String output = "";
         int i = 0;
-        while (i < cipherString.length()) {
-            int temp = Integer.parseInt(cipherString.substring(i, i + 3));
-            BigInteger mod= new BigInteger(String.valueOf(Integer.valueOf(temp)));
-            BigInteger a=mod.modPow(d,n);
-            String c = String.valueOf(a);
-            int valid = Integer.parseInt(c);
+
+            String[] array = message.split(",");
+            for(String value:array) {
+                BigInteger mod = new BigInteger(value);
+                BigInteger a= mod.modPow(d,n);
+
+                System.out.print(a + " ");
+                String c = String.valueOf(a);
+                  int valid = Integer.parseInt(c);
+                char ch = (char) valid;
+                   output = output + ch;
+                   asci=asci+a+",";
+            }
+            asci=asci.substring(0, asci.lastIndexOf(","));
+           // BigInteger mod= new BigInteger(String.valueOf(Integer.valueOf(temp)));
+       //     BigInteger a=mod.modPow(d,n);
+          //  String c = String.valueOf(a);
+         //   int valid = Integer.parseInt(c);
          //   System.out.println(a);
-             char ch = (char) valid;
+        //     char ch = (char) valid;
          //   System.out.println(ch+"decrypt");
-            output = output + ch;
-            asci=asci+a;
-            System.out.println(asci);
-            System.out.println(output);
-            i = i + 3;
-        }
+        //    output = output + ch;
+
+        //    System.out.println(asci);
+           System.out.println(output);
         return output;
     }
 
-    public static BigInteger SetE(BigInteger t)
+    public  BigInteger SetE(BigInteger t)
     {
         BigInteger e = BigInteger.ZERO;
         for(BigInteger i=BigInteger.TWO; i.compareTo(t)<0; i=i.add(BigInteger.ONE))
@@ -207,33 +218,92 @@ launch(args);
     }
 
     public void Enrcypt(ActionEvent actionEvent) {
-
+        String message=message_field.getText();
         generatePrimeNumbers() ;
         generatePublicPrivateKeys() ;
         Main akg = new Main();
-        BigInteger publicKeyB = akg.getE();
-        BigInteger privateKeyB = akg.getD();
         BigInteger r=  getR();
          EEEE = SetE(r);
          randomNumberB = getN();
-         cipherMessage = stringCipher(message,EEEE,randomNumberB);
-         encrypted=encrypt(cipherMessage,EEEE,randomNumberB);
+        cipherMessage = stringCipher(message,EEEE,randomNumberB);
          asci_field.setText(String.valueOf(cipherMessage));
          result_field.setText("Message was encrypted with ASCI ");
-        System.out.println("Encryption " + encrypt(cipherMessage,EEEE,randomNumberB));
+       // System.out.println("Encryption " + encrypt(cipherMessage,EEEE,randomNumberB));
 
     }
 
     public void Decrypt(ActionEvent actionEvent) {
+      asci_field.clear();
         BigInteger DDD= generateD(EEEE);
-        BigInteger decrypted=decrypt(encrypted,DDD,randomNumberB);
+    //    BigInteger decrypted=decrypt(encrypted,DDD,randomNumberB);
          String restoredMessage = cipherToString(cipherMessage,DDD,randomNumberB);
         asci_field.setText(asci);
-        result_field.setText(restoredMessage);
-        System.out.println("Restored message -> "+restoredMessage);
+       result_field.setText(restoredMessage);
+       System.out.println("Restored message -> "+restoredMessage);
+        asci="";
     }
 
-    public void write_to_file(ActionEvent actionEvent) {
-        
+    public void write_to_file(ActionEvent actionEvent) throws IOException {
+        try {
+            FileWriter myWriter = new FileWriter("filename.txt");
+            myWriter.write(EEEE + ";" + randomNumberB + ";" + cipherMessage);
+            myWriter.close();
+            System.out.println("Successfully wrote to the file.");
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
     }
-}
+
+    public void decrypt_from_file(ActionEvent actionEvent) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader("filename.txt"));
+        String line = null;
+
+        String[] values= new String[3];
+        while ((line = br.readLine()) != null) {
+            values = line.split(";");
+            for (String str : values) {
+                System.out.println(str);
+
+            }
+        }
+        BigInteger E= new BigInteger(values[0]);
+        System.out.println(E+"<______e");
+System.out.println(values[0]);
+        br.close();
+        BigInteger n = new BigInteger("899");
+        BigInteger p = new BigInteger("2");
+        BigInteger D;
+        BigInteger rnd = new BigInteger(values[1]);
+
+     //   System.out.println(D+"<=-----D");
+        //For each prime p
+        while(p.compareTo(n.divide(BigInteger.TWO)) <= 0){
+            //If we find p
+            if(n.mod(p).equals(BigInteger.ZERO)){
+                //Calculate q
+                BigInteger q = n.divide(p);
+                //Displays the result
+                System.out.println("(" + p+ ", " + q + ")");
+                //The end of the algorithm
+                System.out.println(getPhi(p,q)+"agdshj");
+                D = E.modInverse( getPhi(p,q) ) ;
+
+                System.out.println(D+"<=-----D");
+                String restoredMessage = cipherToString(values[2], D,rnd);
+                System.out.println(restoredMessage+"<-----restored");
+                result_field.setText(restoredMessage);
+                         return;
+
+            }
+            //p = the next prime number
+            p = p.nextProbablePrime();
+
+        }
+
+
+
+    }
+    }
+
+
